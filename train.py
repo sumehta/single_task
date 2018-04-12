@@ -35,14 +35,14 @@ parser.add_argument('--lr', type=float, default=0.001, help='initial learning ra
 parser.add_argument('--momentum', type=float, default=0.9, help='sgd with momentum')
 parser.add_argument('--weight_decay', type=float, default=0.0001, help='weight_decay')
 parser.add_argument('--clip', type=float, default=0.5, help='gradient clipping')
-parser.add_argument('--epochs', type=int, default=10, help='upper epoch limit')
+parser.add_argument('--epochs', type=int, default=30, help='upper epoch limit')
 parser.add_argument('--batch_size', type=int, default=32, metavar='N', help='batch size')
 parser.add_argument('--eval_size', type=int, default=32, metavar='N', help='evaluation batch size')
 parser.add_argument('--seed', type=int, default=1111, help='random seed')
 parser.add_argument('--pretrained', type=str, default='', help='whether start from pretrained model')
 parser.add_argument('--cuda', default=True, action='store_true', help='use CUDA')
 parser.add_argument('--log-interval', type=int, default=10, metavar='N', help='report interval')
-parser.add_argument('--save', type=str,  default='LSTM-POPT.pt', help='path to save the final model')
+parser.add_argument('--save', type=str,  default='LSTM-Pnp.pt', help='path to save the final model')
 
 args = parser.parse_args()
 
@@ -79,10 +79,10 @@ else:
 ntokens = len( corpus.dictionary )
 
 # 7 classes for protest type
-nclass = 12
+nclass = 2
 
 if not args.pretrained:
-    model = LSTM( ntokens, args.emsize, args.nhid, args.nlayers, args.da, args.r, args.mlp_nhid, nclass, emb_matrix, args.cuda )
+    model = LSTM( ntokens, args.emsize, args.nhid, args.nlayers, args.mlp_nhid, nclass, emb_matrix, args.cuda )
 else:
     model = torch.load( args.pretrained )
     print('Pretrained model loaded.')
@@ -138,7 +138,7 @@ def train( lr, epoch ):
 
             total_loss = 0
             start_time = time.time()
-         
+
 
     return np.mean( all_losses )
 
@@ -147,13 +147,18 @@ def train( lr, epoch ):
 def evaluate( data_source, labels, data_len ):
     total_loss = 0
 
+#     acc = []
+#     pre_micro = []
+#     pre_macro = []
+#     rec_micro = []
+#     rec_macro = []
+#     f1_micro = []
+#     f1_macro = []
+
     acc = []
-    pre_micro = []
-    pre_macro = []
-    rec_micro = []
-    rec_macro = []
-    f1_micro = []
-    f1_macro = []
+    pre = []
+    rec = []
+    f1 = []
 
     ntokens = len( corpus.dictionary )
     hidden = model.init_hidden( args.eval_size )
@@ -170,34 +175,21 @@ def evaluate( data_source, labels, data_len ):
         _, pred = output_flat.topk( 1 , 1, True, True )
         pred = pred.t()
         target = targets.view( 1, -1 )
-  
-        p, r, f, a = compute_measure( pred, target )
+
+        p, r, f, a = compute_measure_binary( pred, target )
         acc.append( a )
-        pre_micro.append( p[0] )
-        pre_macro.append(p[1])
-        rec_micro.append( r[0] )
-        rec_macro.append( r[1] )
-        f1_micro.append( f[0] )
-        f1_macro.append( f[1] )
+        pre.append( p )
+        rec.append( r )
+        f1.append( f )
+
 
     # Compute Precision, Recall, F1, and Accuracy
     print('Measure on this dataset')
-    print('Precision Micro :', np.mean( pre_micro ))
-    print('Precision Macro :', np.mean( pre_macro ))
-    print('Recall Micro:', np.mean( rec_micro ))
-    print('Recall Macro:', np.mean( rec_macro ))
-    print('F1 Micro:', np.mean( f1_micro ))
-    print('F1 Macro:', np.mean( f1_macro ))
+    print('Precision:', np.mean( pre ))
+    print('Recall:', np.mean( rec ))
+    print('F1:', np.mean( f1 ))
     print('Acc:', np.mean( acc ))
 
-#     logging.info('Measure on this dataset')
-#     logging.info('Precision Micro :', np.mean( pre_micro ))
-#     logging.info('Precision Macro :', np.mean( pre_macro ))
-#     logging.info('Recall Micro:', np.mean( rec_micro ))
-#     logging.info('Recall Macro:', np.mean( rec_macro ))
-#     logging.info('F1 Micro:', np.mean( f1_micro ))
-#     logging.info('F1 Macro:', np.mean( f1_macro ))
-#     logging.info('Acc:', np.mean( acc ))
 
     return total_loss[0] / len( data_source )
 
@@ -230,18 +222,18 @@ for epoch in range( 1, args.epochs + 1 ):
 
 
 # Plot the Learning Curve
-#plt.figure()
-#plt.plot( all_losses )
-#plt.savefig( 'Learning-curve.eps' )
+plt.figure()
+plt.plot( all_losses )
+plt.savefig( 'Learning-curve.eps' )
 
 
 # Run on test data and Save the model.
 with open( args.save, 'rb' ) as f:
     model = torch.load( f )
 
+print('**************Test Performance*****************')
 test_loss = evaluate( test_data, test_label, test_len )
 
 print( '=' * 80 )
 print( '| End of training | test loss {:5.2f} |'.format( test_loss ) )
 print( '=' * 80 )
-
