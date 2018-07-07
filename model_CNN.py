@@ -6,7 +6,7 @@ from torch.autograd import Variable
 
 class CNN_Text(nn.Module):
 
-    def __init__(self, ntok, ninp, nclass, emb_matrix, nkernel=100, ksizes=[3, 4, 5], static=False, drop=0.5 ):
+    def __init__(self, ntok, ninp, nclass, emb_matrix, nkernel=100, ksizes=[7, 8, 9], static=False, drop=0.5 ):
         super(CNN_Text, self).__init__()
         V = ntok
         D = ninp

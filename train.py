@@ -10,7 +10,7 @@ import csv
 import numpy as np
 
 # Import Model and Data from external file
-from model_LSTM import *
+from model_CNN import *
 from data import *
 from Utility import *
 
@@ -82,7 +82,8 @@ ntokens = len( corpus.dictionary )
 nclass = 2
 
 if not args.pretrained:
-    model = LSTM( ntokens, args.emsize, args.nhid, args.nlayers, args.mlp_nhid, nclass, emb_matrix, args.cuda )
+    ntok, ninp, nclass, emb_matrix, nkernel=100, ksizes=[7, 8, 9], static=False, drop=0.5
+    model = CNN_Text( ntokens, args.emsize, args.nclass, emb_matrix )
 else:
     model = torch.load( args.pretrained )
     print('Pretrained model loaded.')
@@ -147,14 +148,6 @@ def train( lr, epoch ):
 def evaluate( data_source, labels, data_len ):
     total_loss = 0
 
-#     acc = []
-#     pre_micro = []
-#     pre_macro = []
-#     rec_micro = []
-#     rec_macro = []
-#     f1_micro = []
-#     f1_macro = []
-
     acc = []
     pre = []
     rec = []
@@ -176,7 +169,7 @@ def evaluate( data_source, labels, data_len ):
         pred = pred.t()
         target = targets.view( 1, -1 )
 
-        p, r, f, a = compute_measure_binary( pred, target )
+        p, r, f, a = compute_measure( pred, target )
         acc.append( a )
         pre.append( p )
         rec.append( r )

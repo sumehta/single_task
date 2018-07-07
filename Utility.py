@@ -14,7 +14,7 @@ def select_data( data, bsz ):
     except:
         nbatch = len( data ) // bsz
         data = data[ : nbatch * bsz ]
-        
+
     return data
 
 
@@ -85,34 +85,34 @@ def compute_measure_binary( pred, target ):
 
 
 # Function to compute precision, recall, f1 and accuracy
-def compute_measure( pred, target ):
+def compute_measure( pred, target, labels ):
     pre = []
     rec = []
     f1 = []
-    pre.append(precision_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels =[0, 1], average='micro'))
-    pre.append(precision_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels =[0, 1], average='macro'))
+    # pre.append(precision_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels =labels, average='micro'))
+    pre.append(precision_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels =labels, average='macro'))
 
-    rec.append(recall_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=[0, 1], average='micro'))
-    rec.append(recall_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=[0, 1], average='macro'))
+    # rec.append(recall_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=labels, average='micro'))
+    rec.append(recall_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=labels, average='macro'))
 
-    f1.append(f1_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=[0, 1], average='micro'))
-    f1.append(f1_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=[0, 1], average='macro'))
-               
+    # f1.append(f1_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=labels, average='micro'))
+    f1.append(f1_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0], labels=labels, average='macro'))
+
     acc = accuracy_score(pred.data.cpu().numpy()[0], target.data.cpu().numpy()[0],  normalize=True)
     return pre, rec, f1, acc
 
 
 # Get Attention Weights Function
 def Attentive_weights( model, data_source, labels, data_len, eval_batch_size, cuda ):
-    
+
     hidden = model.init_hidden( eval_batch_size )
     Weights = {}
-    
+
     for i in range( 0, data_source.size( 0 ) - 1, eval_batch_size ):
-        
+
         data, targets, len_li = get_batch( data_source, labels, data_len, i, eval_batch_size, cuda, evaluation=True )
         output, _, _, weights = model( data, hidden, len_li )
-        
+
         Weights[ i ] = [ weights, output ]
 
     return Weights
